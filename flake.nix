@@ -8,14 +8,15 @@
     };
     flake-utils.url = "github:numtide/flake-utils";
     flake-compat = {
-      url = github:edolstra/flake-compat;
+      url = "github:edolstra/flake-compat";
       flake = false;
     };
   };
-  
-  outputs = inputs: with inputs;
+
+  outputs = inputs:
+    with inputs;
     let
-      overlays = import ./overlay (rust-overlay.overlay);
+      overlays = import ./overlay (rust-overlay.overlays.default);
       combinedOverlay = overlays.combined;
 
     in flake-utils.lib.eachDefaultSystem (system:
@@ -23,9 +24,7 @@
         # 1. Setup nixpkgs with rust and cargo2nix overlays.
         pkgs = import nixpkgs {
           inherit system;
-          overlays = [
-            combinedOverlay
-          ];
+          overlays = [ combinedOverlay ];
           # set `crossSystem` (see examples/3-cross-compiling) for configuring cross
         };
 
@@ -87,7 +86,8 @@
         # An example of a crates.io path:
         # rustPkgs."registry+https://github.com/rust-lang/crates.io-index".openssl."0.10.30"
 
-        cargo2nixBin = (rustPkgs.workspace.cargo2nix {}).bin; # supports override & overrideAttrs
+        cargo2nixBin = (rustPkgs.workspace.cargo2nix
+          { }).bin; # supports override & overrideAttrs
 
         # The workspace defines a development shell with all of the dependencies
         # and environment settings necessary for a regular `cargo build`.
@@ -131,7 +131,7 @@
           # workspace derivation arguments) and run them manually outside a Nix
           # derivation.s
           ci = pkgs.rustBuilder.runTests rustPkgs.workspace.cargo2nix {
-            /* Add `depsBuildBuild` test-only deps here, if any. */
+            # Add `depsBuildBuild` test-only deps here, if any.
           };
 
           # for legacy users
@@ -141,22 +141,25 @@
         apps = rec {
           # nix run .#cargo2nix
           # nix run github:cargo2nix/cargo2nix
-          cargo2nix = { type = "app"; program = "${packages.default}/bin/cargo2nix"; };
+          cargo2nix = {
+            type = "app";
+            program = "${packages.default}/bin/cargo2nix";
+          };
           # nix run
           # nix run github:cargo2nix/cargo2nix
           default = cargo2nix;
         };
-      }
-    ) // {
-      # The above outputs are mapped over system for `nix run` and `nix develop`
-      # workflows.  They are merged with these system-independent attributes,
-      # which are top level attributes can be used directly in downstream
-      # flakes.  If `cargo2nix` is your flake input, `cargo2nix.overlay` is the
-      # overlay.
-      inherit overlays;
-      # Nix flake check complains.  I will keep this attribute alive until next
-      # version branch-off.
-      overlay = builtins.trace
-        "cargo2nix.overlay is deprecated.  Use cargo2nix.overlays.default" overlays.default;
-    };
+      }) // {
+        # The above outputs are mapped over system for `nix run` and `nix develop`
+        # workflows.  They are merged with these system-independent attributes,
+        # which are top level attributes can be used directly in downstream
+        # flakes.  If `cargo2nix` is your flake input, `cargo2nix.overlay` is the
+        # overlay.
+        inherit overlays;
+        # Nix flake check complains.  I will keep this attribute alive until next
+        # version branch-off.
+        overlay = builtins.trace
+          "cargo2nix.overlay is deprecated.  Use cargo2nix.overlays.default"
+          overlays.default;
+      };
 }
