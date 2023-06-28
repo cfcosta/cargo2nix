@@ -94,7 +94,7 @@
         # Passes through all arguments to pkgs.mkShell for adding supplemental
         # dependencies.
         workspaceShell = (rustPkgs.workspaceShell {
-          # packages = [ pkgs.somethingExtra ];
+          packages = [ cargo2nixBin ];
           # shellHook = ''
           #   export PS1="\033[0;31m☠dev-shell☠ $ \033[0m"
           # '';
